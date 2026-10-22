@@ -1,0 +1,468 @@
+{
+	"info": {
+		"_postman_id": "9c2f4a10-1d3e-4f5a-9a8b-6c1d2e3f4a5b",
+		"name": "ADSO 68 — API Tienda (Node + MySQL)",
+		"description": "API con autenticación JWT y módulos de productos, pedidos, facturas e inventario.\n\n**Cómo usarla:**\n1. Ejecuta **Login** (o **Registrarse**): el token JWT se guarda automáticamente en la variable `{{token}}`.\n2. **Crear producto** guarda `{{producto_id}}`, **Crear pedido** guarda `{{pedido_id}}` y **Generar factura** guarda `{{factura_id}}`.\n3. Los usuarios de prueba son `admin / admin123` (rol admin) y `vendedor / vendedor123` (rol vendedor).\n\nOperaciones de escritura en productos, facturas e inventario requieren rol **admin**.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "producto_id",
+			"value": ""
+		},
+		{
+			"key": "pedido_id",
+			"value": ""
+		},
+		{
+			"key": "factura_id",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "1. Autenticación",
+			"item": [
+				{
+					"name": "Registrarse",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Registro responde 201', () => pm.response.code === 201);",
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.token) {",
+									"    pm.collectionVariables.set('token', json.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"usuario\": \"jperez\",\n  \"clave\": \"secreta123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login (obtiene token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Login responde 200', () => pm.response.code === 200);",
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.token) {",
+									"    pm.collectionVariables.set('token', json.data.token);",
+									"    console.log('Token guardado en {{token}}');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"admin\",\n  \"clave\": \"admin123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Mi perfil",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/perfil",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "perfil"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Productos",
+			"item": [
+				{
+					"name": "Crear (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.id) {",
+									"    pm.collectionVariables.set('producto_id', String(json.data.id));",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Arroz x kilo\",\n  \"descripcion\": \"Arroz blanco empacado\",\n  \"precio\": 3200,\n  \"stock\": 50,\n  \"categoria\": \"Abarrotes\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/productos",
+							"host": ["{{base_url}}"],
+							"path": ["productos"]
+						}
+					}
+				},
+				{
+					"name": "Listar (con filtros y paginación)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/productos?pagina=1&limite=10&estado=1",
+							"host": ["{{base_url}}"],
+							"path": ["productos"],
+							"query": [
+								{ "key": "pagina", "value": "1" },
+								{ "key": "limite", "value": "10" },
+								{ "key": "estado", "value": "1", "description": "0 inactivo, 1 activo" },
+								{ "key": "nombre", "value": "arroz", "disabled": true },
+								{ "key": "categoria", "value": "Abarrotes", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Consultar por id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/productos/{{producto_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "{{producto_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Actualizar (admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"precio\": 3500,\n  \"stock\": 45\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/{{producto_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "{{producto_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Desactivar (admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"estado\": 0\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/productos/{{producto_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "{{producto_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar (admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/productos/{{producto_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["productos", "{{producto_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Pedidos",
+			"item": [
+				{
+					"name": "Crear",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.id) {",
+									"    pm.collectionVariables.set('pedido_id', String(json.data.id));",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cliente\": \"Doña Mercedes\",\n  \"items\": [\n    { \"producto_id\": {{producto_id}}, \"cantidad\": 2 }\n  ]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos"]
+						}
+					}
+				},
+				{
+					"name": "Listar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pedidos?pagina=1&limite=10&estado=pendiente",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos"],
+							"query": [
+								{ "key": "pagina", "value": "1" },
+								{ "key": "limite", "value": "10" },
+								{ "key": "estado", "value": "pendiente", "description": "pendiente | confirmado | entregado | facturado | cancelado" },
+								{ "key": "cliente", "value": "mercedes", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Consultar por id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pedidos/{{pedido_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "{{pedido_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Cambiar estado",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"estado\": \"confirmado\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/pedidos/{{pedido_id}}/estado",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "{{pedido_id}}", "estado"]
+						}
+					}
+				},
+				{
+					"name": "Eliminar (admin, solo cancelados)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pedidos/{{pedido_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["pedidos", "{{pedido_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Facturas",
+			"item": [
+				{
+					"name": "Generar desde pedido (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json && json.data && json.data.id) {",
+									"    pm.collectionVariables.set('factura_id', String(json.data.id));",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pedido_id\": {{pedido_id}}\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/facturas",
+							"host": ["{{base_url}}"],
+							"path": ["facturas"]
+						}
+					}
+				},
+				{
+					"name": "Listar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/facturas?pagina=1&limite=10",
+							"host": ["{{base_url}}"],
+							"path": ["facturas"],
+							"query": [
+								{ "key": "pagina", "value": "1" },
+								{ "key": "limite", "value": "10" },
+								{ "key": "estado", "value": "emitida", "disabled": true },
+								{ "key": "pedido_id", "value": "1", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Consultar por id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/facturas/{{factura_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["facturas", "{{factura_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Pagar (admin)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/facturas/{{factura_id}}/pagar",
+							"host": ["{{base_url}}"],
+							"path": ["facturas", "{{factura_id}}", "pagar"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Inventario",
+			"item": [
+				{
+					"name": "Stock actual",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventario?minimo=10",
+							"host": ["{{base_url}}"],
+							"path": ["inventario"],
+							"query": [
+								{ "key": "minimo", "value": "10", "description": "Muestra solo productos con stock menor o igual" },
+								{ "key": "nombre", "value": "arroz", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Kardex (movimientos)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventario/movimientos?pagina=1&limite=20",
+							"host": ["{{base_url}}"],
+							"path": ["inventario", "movimientos"],
+							"query": [
+								{ "key": "pagina", "value": "1" },
+								{ "key": "limite", "value": "20" },
+								{ "key": "producto_id", "value": "{{producto_id}}", "disabled": true },
+								{ "key": "tipo", "value": "salida", "disabled": true, "description": "entrada | salida | ajuste" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Registrar entrada / salida / ajuste (admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"producto_id\": {{producto_id}},\n  \"tipo\": \"entrada\",\n  \"cantidad\": 10,\n  \"motivo\": \"Compra del proveedor\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/inventario/movimientos",
+							"host": ["{{base_url}}"],
+							"path": ["inventario", "movimientos"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

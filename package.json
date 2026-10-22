@@ -1,0 +1,16 @@
+{
+  "name": "adso_68_node_nuevo",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Juan Camilo Pabon <jucpabon@nequi.com>",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "mysql2": "^3.24.6"
+  }
+}
